@@ -1,0 +1,289 @@
+/*
+ * css/app.css
+ *
+ * Screen styles for index.html and tests/test.html. Colours are defined as
+ * tokens on :root and redefined for dark mode. Print styles for wallet cards
+ * will be added with the PDF/print milestone (M7).
+ */
+
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #1b1f24;
+  --muted: #5b6470;
+  --border: #d8dde3;
+  --accent: #f26822;          /* Monero orange, used sparingly */
+  --good: #1a7f37;
+  --good-bg: #e6f4ea;
+  --bad: #b42318;
+  --bad-bg: #fdecea;
+  --warn: #8a5300;
+  --warn-bg: #fff4e0;
+  --radius: 10px;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111418;
+    --surface: #1a1f25;
+    --text: #e6e9ed;
+    --muted: #9aa4b0;
+    --border: #2d343c;
+    --good: #5cc97a;
+    --good-bg: #13291b;
+    --bad: #ff7b72;
+    --bad-bg: #3a1614;
+    --warn: #f0b45a;
+    --warn-bg: #33250e;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+#app {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+h1 { font-size: 1.6rem; margin: 0; }
+h2 { font-size: 1.15rem; margin: 0 0 8px; }
+a { color: var(--accent); }
+.muted { color: var(--muted); }
+
+.header-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+button {
+  font: inherit;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+
+.banner { padding: 10px 14px; border-radius: var(--radius); margin: 16px 0; font-weight: 600; }
+.banner-warn { background: var(--warn-bg); color: var(--warn); }
+.banner-ok { background: var(--good-bg); color: var(--good); }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.status-good { color: var(--good); font-weight: 600; }
+.status-bad { color: var(--bad); font-weight: 600; background: var(--bad-bg); padding: 8px; border-radius: var(--radius); }
+
+.test-list { list-style: none; padding: 0; margin: 8px 0; font-size: 0.92rem; }
+.test-list li { padding: 2px 0; overflow-wrap: anywhere; }
+.test-list .ok { color: var(--good); }
+.test-list .fail { color: var(--bad); }
+
+/* tests/test.html */
+table.results { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+table.results th, table.results td { text-align: left; padding: 4px 6px; border-bottom: 1px solid var(--border); vertical-align: top; overflow-wrap: anywhere; }
+table.results td.num { text-align: right; white-space: nowrap; color: var(--muted); }
+table.results tr.group th { background: var(--bg); padding-top: 12px; }
+pre { font-family: var(--mono); font-size: 0.85rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+footer { margin-top: 32px; font-size: 0.9rem; }
+
+/* ---- Forms -------------------------------------------------------------- */
+h3 { font-size: 1rem; margin: 20px 0 4px; }
+.small { font-size: 0.88rem; margin: 2px 0 8px; }
+input[type="text"], textarea, select {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+}
+input[type="text"], textarea { flex: 1 1 220px; min-width: 0; font-family: var(--mono); }
+input:focus, textarea:focus, select:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.danger { color: var(--bad); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.input-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-start; margin: 6px 0; }
+.field-msg { min-height: 1.2em; margin: 2px 0; font-size: 0.88rem; color: var(--muted); }
+
+/* ---- Entropy panel ------------------------------------------------------ */
+.meter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 12px 0 4px; }
+.meter-row meter { flex: 1 1 220px; height: 18px; }
+.meter-text { font-family: var(--mono); font-weight: 600; min-width: 10ch; }
+.ready { margin: 4px 0 0; font-weight: 600; }
+canvas.pad {
+  display: block;
+  width: 100%;
+  height: 180px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  cursor: crosshair;
+  touch-action: none;           /* finger movement feeds entropy instead of scrolling */
+}
+.dice-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+button.die { width: 44px; height: 44px; padding: 0; font-size: 1.15rem; font-weight: 700; }
+
+/* ---- Wallet settings (generator-ui.js) ----------------------------------- */
+fieldset { border: 1px solid var(--border); border-radius: var(--radius); margin: 12px 0; padding: 8px 12px; }
+legend { font-weight: 600; padding: 0 4px; }
+.radio-row label, label.check { cursor: pointer; }
+.radio-row p { margin: 0 0 8px 22px; }
+label.check { display: block; margin: 8px 0; }
+.coin-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 16px; }
+.coin-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.coin-row.disabled { opacity: 0.55; }
+.coin-row select { font-size: 0.85rem; padding: 2px 6px; }
+.warn { color: var(--warn); }
+.problems { color: var(--muted); font-size: 0.9rem; margin: 8px 0 0; }
+.generate-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+button.big { font-size: 1.05rem; padding: 10px 22px; }
+input[type="password"], input[type="number"] {
+  font: inherit; color: var(--text); background: var(--bg);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px;
+}
+input[type="password"] { flex: 1 1 200px; min-width: 0; }
+
+/* ---- Result (result-ui.js) ----------------------------------------------- */
+.mono { font-family: var(--mono); overflow-wrap: anywhere; }
+.warn-list { color: var(--warn); padding-left: 20px; }
+.backup, .share { margin: 12px 0; }
+.word-grid { columns: 3 9rem; font-family: var(--mono); font-size: 1rem; margin: 8px 0; padding-left: 2.2em; }
+.word-grid li { break-inside: avoid; padding: 1px 0; }
+.coin-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin: 12px 0; }
+.coin-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; background: var(--bg); }
+.coin-card h3 { margin-top: 0; }
+.item { margin: 10px 0; }
+.item-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.item .label { font-weight: 600; font-size: 0.9rem; }
+.item .value, .secret-value { font-size: 0.88rem; margin-top: 2px; }
+button.reveal { font-size: 0.8rem; padding: 2px 10px; }
+canvas.qr { display: block; margin-top: 6px; image-rendering: pixelated; border: 4px solid #fff; }
+
+/* ---- PDF panel (pdf-ui.js) ----------------------------------------------- */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px 16px; margin: 12px 0; }
+label.field { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.92rem; }
+label.field input[type="number"] { width: 6.5em; }
+label.field input[type="file"] { max-width: 60%; font-size: 0.8rem; }
+.form-grid label.check { margin: 0; font-size: 0.92rem; }
+
+/* ---- Wizard (app.js) ------------------------------------------------------ */
+.stepper { display: flex; gap: 6px; list-style: none; padding: 0; margin: 16px 0 0; flex-wrap: wrap; }
+.stepper li { flex: 1 1 120px; padding: 8px 10px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-weight: 600; text-align: center; }
+.stepper li.current { border-color: var(--accent); color: var(--text); box-shadow: inset 0 -3px 0 var(--accent); }
+.stepper li.done { color: var(--good); }
+.wizard-nav { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 8px 0 24px; }
+.wizard-nav button:only-child { margin-left: auto; }
+.selftest p { margin: 0 0 4px; }
+
+/* ---- Page preview (pdf-preview.js) ---------------------------------------- */
+.preview-wrap { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; margin: 12px 0; }
+.preview-wrap p { flex: 1 1 200px; }
+svg.page-preview { max-width: 100%; height: auto; touch-action: none; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); }
+svg.page-preview .paper { fill: #ffffff; }
+svg.page-preview .card-front { fill: rgba(242, 104, 34, 0.10); stroke: #999999; stroke-width: 0.3; }
+svg.page-preview .card-back { fill: rgba(26, 127, 55, 0.10); stroke: #999999; stroke-width: 0.3; }
+svg.page-preview .card-label { font: 5px sans-serif; fill: #555555; }
+svg.page-preview .handle-line { stroke: #2563eb; }
+svg.page-preview .handle-x { cursor: ew-resize; }
+svg.page-preview .handle-y { cursor: ns-resize; }
+svg.page-preview .handle:hover .handle-line { stroke: #f26822; stroke-width: 1; }
+
+/* ---- Help "?" buttons and dialog (help.js) ------------------------------- */
+button.help {
+  /* a small round button, a few px larger than the surrounding text */
+  width: calc(1em + 6px);
+  height: calc(1em + 6px);
+  padding: 0;
+  margin: 0 0 0 6px;
+  border: 1.5px solid var(--accent);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--accent);
+  font: 700 0.8em/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  vertical-align: middle;
+  flex: 0 0 auto;
+  cursor: help;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+button.help:hover, button.help:focus-visible { background: var(--accent); color: #fff; }
+.nav-item { display: inline-flex; align-items: center; }
+dialog.help-dialog {
+  max-width: min(520px, calc(100vw - 32px));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  padding: 18px 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+dialog.help-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+.help-body p { margin: 0 0 10px; line-height: 1.55; }
+.help-actions { text-align: right; }
+.input-row button.help, .meter-row button.help, .generate-row button.help { align-self: center; }
+
+/* ---- Ultra security guide (guide/*.html) and its button ------------------- */
+.guide-row { display: flex; align-items: center; margin: 4px 0 0; }
+a.guide-btn, button.guide-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 2px solid var(--good);
+  border-radius: var(--radius);
+  background: var(--good-bg);
+  color: var(--good);
+  font-weight: 700;
+  text-decoration: none;
+}
+a.guide-btn:hover, a.guide-btn:focus-visible, button.guide-btn:hover, button.guide-btn:focus-visible { background: var(--good); color: #fff; }
+.guide .lang-link { font-weight: 600; }
+.guide h3 { margin-top: 16px; }
+.guide li { margin: 4px 0; line-height: 1.55; }
+.guide code { font-family: var(--mono); font-size: 0.9em; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; overflow-wrap: anywhere; }
+.guide .checklist li::marker { color: var(--accent); font-weight: 700; }
+.guide .toc ol { columns: 2 16rem; }
+.guide .tip, .guide .warn { border-radius: var(--radius); padding: 10px 14px; margin: 12px 0; }
+.guide .tip { background: var(--good-bg); color: var(--text); border-left: 4px solid var(--good); }
+.guide .warn { background: var(--warn-bg); color: var(--text); border-left: 4px solid var(--warn); }
+
+/* ---- In-page guide layer (single-file edition, app.js openGuide) ------------ */
+button.guide-btn { font-size: 1rem; cursor: pointer; }
+.guide-overlay { position: fixed; inset: 0; z-index: 100; overflow: auto; background: var(--bg); padding: 0 16px 32px; }
+.guide-overlay .guide { max-width: 900px; margin: 0 auto; }
+.guide-overlay-bar { position: sticky; top: 0; display: flex; justify-content: flex-end; max-width: 900px; margin: 0 auto; padding: 10px 0; background: var(--bg); }
+
+/* ---- Phones and touch screens ------------------------------------------- */
+/* Grids never ask for more than the screen width (very small phones). */
+.coin-grid { grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); }
+.coin-cards { grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); }
+.form-grid { grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); }
+@media (max-width: 600px) {
+  #app { padding: 16px 12px 40px; }
+  h1 { font-size: 1.35rem; }
+  .card { padding: 12px; }
+  .stepper li { flex: 1 1 40%; padding: 6px; font-size: 0.9rem; }
+  .wizard-nav { flex-direction: column-reverse; align-items: stretch; }
+  .wizard-nav .nav-item { justify-content: space-between; }
+  .wizard-nav .nav-item > button:not(.help) { flex: 1 1 auto; }
+  .word-grid { columns: 2; }
+  canvas.pad { height: 220px; }
+}
+/* Fingers need bigger targets than mouse pointers. */
+@media (pointer: coarse) {
+  button.help { width: calc(1em + 12px); height: calc(1em + 12px); }
+  button:not(.help), select, input[type="text"], input[type="password"], input[type="number"] { min-height: 40px; }
+  svg.page-preview .handle line:first-child { stroke-width: 12; }   /* wider invisible grip */
+}
