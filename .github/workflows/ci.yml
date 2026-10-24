@@ -1,22 +1,39 @@
 # .github/workflows/ci.yml
 #
 # PURPOSE
-#   Automatic build + test on every push and pull request to main (and on
-#   demand from the Actions tab). Same steps as release.yml, minus the tag
-#   check, provenance and publishing, so nothing is released from here:
+#   One workflow for build, test and release, all on GitHub's own servers:
+#
+#   build-and-test  (every push / pull request to main, v* tag pushes, manual run)
 #     1. Node.js tests (tools/dev/node-harness.mjs)
-#     2. build the release files (tools/release/make-zip.mjs) and check SHA256SUMS
+#     2. build dist/OfflineKey-Vault-X.Y.Z.zip, the single-file .html and
+#        SHA256SUMS (tools/release/make-zip.mjs), check the checksums
 #     3. unpack the zip and run the browser tests on the unpacked copy
 #        (Chrome, Edge, Firefox; includes the single-file edition)
+#     4. hand dist/ to the release job as an artifact
+#
+#   release  (only after build-and-test passed, on a push to main or a v* tag)
+#     - reads the version from js/core/namespace.js
+#     - push to main: if tag vX.Y.Z does not exist yet, creates it on this
+#       commit and publishes the release; if it exists, does nothing
+#     - v* tag push (manual release): the tag must match the version; publishes
+#       unless that release already exists
+#     - GitHub-signed build provenance for the zip and the .html
+#       (verify: gh attestation verify <file> --repo snipeTR/OfflineSecureCryptoKey-generator)
+#     - notes come from docs/release-notes/vX.Y.Z.md (first line = title)
+#   The release is created in this same run because a tag created with the
+#   automatic GITHUB_TOKEN does not start another workflow.
 #
 # SECURITY
-#   Third-party actions are pinned to full commit SHAs; read-only token.
+#   Third-party actions are pinned to full commit SHAs (the version is noted
+#   next to each). No secrets besides the automatic GITHUB_TOKEN; write
+#   permissions are granted only to the release job.
 
 name: ci
 
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -26,7 +43,7 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build-and-test:
@@ -64,9 +81,77 @@ jobs:
           node tools/browser-test/run.mjs
 
       - name: Upload build artifacts
-        if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: dist
           path: dist/
-          if-no-files-found: ignore
+          if-no-files-found: error
+
+  release:
+    needs: build-and-test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    concurrency:
+      group: release
+      cancel-in-progress: false
+    permissions:
+      contents: write        # create the tag and the release, upload files
+      id-token: write        # sign the build provenance
+      attestations: write    # store the build provenance
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Decide whether to publish
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(grep -o "value: '[^']*'" js/core/namespace.js | head -1 | cut -d"'" -f2)
+          tag="v$version"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_REF_TYPE" = tag ]; then
+            test "$tag" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME != version $tag"; exit 1; }
+            if gh release view "$tag" > /dev/null 2>&1; then
+              echo "release $tag already exists; nothing to publish"; echo "publish=false" >> "$GITHUB_OUTPUT"; exit 0
+            fi
+          elif git ls-remote --exit-code --tags origin "refs/tags/$tag" > /dev/null; then
+            echo "tag $tag already exists; nothing to publish"; echo "publish=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          test -f "docs/release-notes/$tag.md" || { echo "missing docs/release-notes/$tag.md"; exit 1; }
+          echo "will publish $tag from $GITHUB_SHA"
+          echo "publish=true" >> "$GITHUB_OUTPUT"
+
+      - name: Download build artifacts
+        if: steps.plan.outputs.publish == 'true'
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist
+
+      - name: Verify checksums
+        if: steps.plan.outputs.publish == 'true'
+        run: cd dist && sha256sum -c SHA256SUMS
+
+      - name: Build provenance
+        if: steps.plan.outputs.publish == 'true'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/OfflineKey-Vault-*.zip
+            dist/OfflineKey-Vault-*.html
+
+      - name: Publish the release
+        if: steps.plan.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.plan.outputs.tag }}
+        run: |
+          # First line of the notes file ("# title") is the release title, the rest the notes.
+          notes="docs/release-notes/$TAG.md"
+          title=$(head -n 1 "$notes" | sed 's/^# *//')
+          tail -n +2 "$notes" > /tmp/notes.md
+          # On a push to main the tag does not exist yet: --target creates it on this commit.
+          gh release create "$TAG" dist/OfflineKey-Vault-*.zip dist/OfflineKey-Vault-*.html dist/SHA256SUMS \
+            --target "$GITHUB_SHA" --prerelease --title "$title" --notes-file /tmp/notes.md

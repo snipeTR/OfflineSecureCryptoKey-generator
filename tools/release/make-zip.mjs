@@ -10,9 +10,9 @@
  *     dist/SHA256SUMS                       checksums of both
  *
  * WHERE IT RUNS
- *   Normally on GitHub Actions (.github/workflows/release.yml) when a vX.Y.Z
- *   tag is pushed. It refuses to run with uncommitted changes, because it
- *   reads the files from the working tree.
+ *   Normally on GitHub Actions (.github/workflows/ci.yml) on every push to
+ *   main; its release job publishes a new version. It refuses to run with
+ *   uncommitted changes, because it reads the files from the working tree.
  *
  * REPRODUCIBLE
  *   Files are sorted, every entry gets the timestamp of the last commit and
