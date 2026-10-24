@@ -11,7 +11,7 @@
 #     4. unpack the zip and run the browser tests on the unpacked copy
 #        (Chrome, Edge, Firefox; includes the single-file edition)
 #     5. GitHub-signed build provenance for both files
-#        (verify: gh attestation verify <file> --repo snipeTR/OfflineKey-Vault)
+#        (verify: gh attestation verify <file> --repo snipeTR/OfflineSecureCryptoKey-generator)
 #     6. create the (pre-)release with the three files; notes come from
 #        docs/release-notes/vX.Y.Z.md
 #

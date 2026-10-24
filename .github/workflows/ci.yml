@@ -1,0 +1,72 @@
+# .github/workflows/ci.yml
+#
+# PURPOSE
+#   Automatic build + test on every push and pull request to main (and on
+#   demand from the Actions tab). Same steps as release.yml, minus the tag
+#   check, provenance and publishing, so nothing is released from here:
+#     1. Node.js tests (tools/dev/node-harness.mjs)
+#     2. build the release files (tools/release/make-zip.mjs) and check SHA256SUMS
+#     3. unpack the zip and run the browser tests on the unpacked copy
+#        (Chrome, Edge, Firefox; includes the single-file edition)
+#
+# SECURITY
+#   Third-party actions are pinned to full commit SHAs; read-only token.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - name: Node.js tests
+        run: node tools/dev/node-harness.mjs
+
+      - name: Build release files
+        run: node tools/release/make-zip.mjs
+
+      - name: Verify checksums
+        run: cd dist && sha256sum -c SHA256SUMS
+
+      - name: Browser tests on the unpacked zip
+        run: |
+          # The runner image ships Edge's sandbox helper without the setuid bit,
+          # so Edge aborts; fix it instead of running Edge without a sandbox.
+          sudo chown root:root /opt/microsoft/msedge/msedge-sandbox
+          sudo chmod 4755 /opt/microsoft/msedge/msedge-sandbox
+          version=$(grep -o "value: '[^']*'" js/core/namespace.js | head -1 | cut -d"'" -f2)
+          mkdir -p /tmp/unpacked
+          unzip -q "dist/OfflineKey-Vault-$version.zip" -d /tmp/unpacked
+          cd "/tmp/unpacked/OfflineKey-Vault-$version"
+          (cd vendor && sha256sum -c SHA256SUMS)
+          node tools/browser-test/run.mjs
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: ignore
